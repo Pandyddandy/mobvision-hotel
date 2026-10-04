@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MobVision Hotel</title>
+
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.css">
+
+    <script src="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.js"></script>
+</head>
+
+<body style="margin: 0;">
+
+    <div id="viewer" style="width: 100vw; height: 100vh;"></div>
+
+    <!-- Temporary camera debug readout. -->
+    <div id="camera-debug" style="position: fixed; bottom: 12px; left: 12px; z-index: 1000; padding: 8px 10px; border-radius: 4px; background: rgba(0, 0, 0, 0.75); color: #fff; font: 13px/1.5 monospace; pointer-events: none;">
+        Pitch: --°<br>Yaw: --°
+    </div>
+
+    <script>
+        const viewer = pannellum.viewer('viewer', {
+            default: {
+                firstScene: 'lobby_entry',
+                autoLoad: true
+            },
+
+            scenes: {
+                lobby_entry: {
+                    type: 'equirectangular',
+                    panorama: 'Panoramas/entry.jpg',
+
+                    hotSpots: [
+                        {
+                            pitch: -1.98,
+                            yaw: 133.48,
+                            type: 'scene',
+                            text: 'Go to Lobby Center',
+                            sceneId: 'lobby_center'
+                        }
+                    ]
+                },
+
+                lobby_center: {
+                    type: 'equirectangular',
+                    panorama: 'Panoramas/lobby_center.jpg',
+
+                    hotSpots: [
+                        {
+                            pitch: 0,
+                            yaw: 0,
+                            type: 'scene',
+                            text: 'Go to Lobby Desk',
+                            sceneId: 'lobby_desk'
+                        },
+                        {
+                            pitch: 0,
+                            yaw: 90,
+                            type: 'scene',
+                            text: 'Go to Lobby Hall Door',
+                            sceneId: 'lobby_hall_door'
+                        },
+                        {
+                            pitch: 0,
+                            yaw: 180,
+                            type: 'scene',
+                            text: 'Back to Lobby Entry',
+                            sceneId: 'lobby_entry'
+                        }
+                    ]
+                },
+
+                lobby_desk: {
+                    type: 'equirectangular',
+                    panorama: 'Panoramas/desk.jpg',
+
+                    hotSpots: [
+                        {
+                            pitch: 0,
+                            yaw: 180,
+                            type: 'scene',
+                            text: 'Back to Lobby Center',
+                            sceneId: 'lobby_center'
+                        }
+                    ]
+                },
+
+                lobby_hall_door: {
+                    type: 'equirectangular',
+                    panorama: 'Panoramas/lobby_hall_door.jpg',
+
+                    hotSpots: [
+                        {
+                            pitch: 0,
+                            yaw: 180,
+                            type: 'scene',
+                            text: 'Back to Lobby Center',
+                            sceneId: 'lobby_center'
+                        },
+                        {
+                            pitch: 0,
+                            yaw: 0,
+                            type: 'scene',
+                            text: 'Go to Hall',
+                            sceneId: 'hall'
+                        }
+                    ]
+                },
+
+                hall: {
+                    type: 'equirectangular',
+                    panorama: 'Panoramas/hall.jpg',
+
+                    hotSpots: [
+                        {
+                            pitch: 0,
+                            yaw: 180,
+                            type: 'scene',
+                            text: 'Back to Lobby Hall Door',
+                            sceneId: 'lobby_hall_door'
+                        },
+                        {
+                            pitch: 0,
+                            yaw: 0,
+                            type: 'scene',
+                            text: 'Room 101',
+                            sceneId: 'room101'
+                        }
+                    ]
+                },
+
+                room101: {
+                    type: 'equirectangular',
+                    panorama: 'Panoramas/room101.jpg',
+
+                    hotSpots: [
+                        {
+                            pitch: 0,
+                            yaw: 180,
+                            type: 'scene',
+                            text: 'Back to Hall',
+                            sceneId: 'hall'
+                        }
+                    ]
+                }
+            }
+        });
+
+        // Temporary debug display; remove this block and #camera-debug when done.
+        const cameraDebug = document.getElementById('camera-debug');
+        function updateCameraDebug() {
+            cameraDebug.innerText = 'Pitch: ' + viewer.getPitch().toFixed(2) + '°\n' +
+                'Yaw: ' + viewer.getYaw().toFixed(2) + '°';
+            requestAnimationFrame(updateCameraDebug);
+        }
+        updateCameraDebug();
+    </script>
+
+</body>
+</html>
