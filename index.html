@@ -161,8 +161,8 @@
         // Optional local audio: playback failures never interrupt the panel flow.
         const elevatorSounds = {
             door: new Audio('assets/sounds/elevator/elevator-door-open.mp3'),
-            button: new Audio('assets/sounds/elevator-button.mp3'),
-            ding: new Audio('assets/sounds/elevator-ding.mp3')
+            button: new Audio('assets/sounds/elevator/elevator-button.mp3'),
+            ding: new Audio('assets/sounds/elevator/elevator-ding.mp3')
         };
         Object.values(elevatorSounds).forEach(sound => {
             sound.preload = 'auto';
@@ -211,7 +211,6 @@
             await elevatorDelay(900);
             if (run !== elevatorRun) return;
             elevatorStatus.textContent = 'ARRIVED';
-            elevatorArrivalStage();
             await elevatorDelay(350);
             if (run !== elevatorRun) return;
             elevatorDoorsOpeningStage();
@@ -224,6 +223,8 @@
             const finishTransition = function () {
                 viewer.off('load', finishTransition);
                 viewer.off('error', failTransition);
+                if (run !== elevatorRun || viewer.getScene() !== 'hall') return;
+                elevatorArrivalStage();
                 elevatorBusy = false;
                 resetElevatorButtons();
                 closeElevatorMenu();
