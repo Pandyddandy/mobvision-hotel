@@ -206,8 +206,9 @@
                     yaw: 0,
                     hfov: 100,
                     hotSpots: [
-                        { pitch: 0, yaw: -45, type: 'scene', text: 'Desk', sceneId: 'desk', cssClass: 'enter-hotel-hotspot', createTooltipFunc: createEnterHotelButton, createTooltipArgs: 'Desk' },
-                        { pitch: 0, yaw: 45, type: 'scene', text: 'Hall', sceneId: 'hall', cssClass: 'enter-hotel-hotspot', createTooltipFunc: createEnterHotelButton, createTooltipArgs: 'Hall' }
+                        { pitch: -4.48, yaw: -0.96, type: 'scene', text: 'Desk', sceneId: 'desk', cssClass: 'enter-hotel-hotspot', createTooltipFunc: createEnterHotelButton, createTooltipArgs: 'Desk' },
+                        { pitch: 0.53, yaw: 72.77, type: 'scene', text: 'Hall', sceneId: 'hall', cssClass: 'enter-hotel-hotspot', createTooltipFunc: createEnterHotelButton, createTooltipArgs: 'Hall' },
+                        { pitch: 10.59, yaw: 130.47, type: 'info', text: 'Elevator', clickHandlerFunc: openElevatorMenu, cssClass: 'enter-hotel-hotspot', createTooltipFunc: createEnterHotelButton, createTooltipArgs: 'Elevator' }
                     ]
                 },
                 desk: {
@@ -216,6 +217,11 @@
                     pitch: -5,
                     yaw: -45,
                     hfov: 65,
+                    // Temporary reception viewing limits; tune using the debug readout.
+                    minYaw: -100,
+                    maxYaw: 100,
+                    minPitch: -30,
+                    maxPitch: 30,
                     hotSpots: [
                         {
                             pitch: -5,
@@ -229,9 +235,8 @@
                                 alert('Check-in system coming later.');
                             }
                         },
-                        { pitch: 0, yaw: -15, type: 'info', text: 'Elevator', clickHandlerFunc: openElevatorMenu, cssClass: 'enter-hotel-hotspot', createTooltipFunc: createEnterHotelButton, createTooltipArgs: 'Elevator' },
                         { pitch: 0, yaw: 45, type: 'scene', text: 'Hall', sceneId: 'hall', cssClass: 'enter-hotel-hotspot', createTooltipFunc: createEnterHotelButton, createTooltipArgs: 'Hall' },
-                        { pitch: 0, yaw: 180, type: 'scene', text: 'Back to Lobby', sceneId: 'lobby', cssClass: 'enter-hotel-hotspot', createTooltipFunc: createEnterHotelButton, createTooltipArgs: 'Back to Lobby' }
+                        { pitch: 0, yaw: -80, type: 'scene', text: 'Back to Lobby', sceneId: 'lobby', cssClass: 'enter-hotel-hotspot', createTooltipFunc: createEnterHotelButton, createTooltipArgs: 'Back to Lobby' }
                     ]
                 },
                 hall: {
@@ -258,6 +263,35 @@
         cameraDebug.id = 'camera-debug';
         document.getElementById('viewer').appendChild(cameraDebug);
 
+        // Temporary hotspot-placement tool; remove this block with the readout.
+        const panoramaElement = document.getElementById('viewer');
+        let mousePosition = null;
+        let placementMessage = '';
+        let placementExpires = 0;
+
+        function trackMousePosition(event) {
+            const coordinates = viewer.mouseEventToCoords(event);
+            mousePosition = { pitch: coordinates[0], yaw: coordinates[1] };
+        }
+
+        panoramaElement.addEventListener('mousemove', trackMousePosition);
+        panoramaElement.addEventListener('mouseleave', function () {
+            mousePosition = null;
+        });
+
+        panoramaElement.addEventListener('click', function (event) {
+            if (!event.shiftKey) return;
+            // Capture before hotspot handlers so Shift-click never navigates.
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            trackMousePosition(event);
+            placementMessage = 'Hotspot position:\n' +
+                'yaw: ' + mousePosition.yaw.toFixed(2) + '\n' +
+                'pitch: ' + mousePosition.pitch.toFixed(2);
+            placementExpires = performance.now() + 3000;
+            console.log(placementMessage);
+        }, true);
+
         function updateCameraDebug() {
             const yaw = viewer.getYaw();
             const normalizedView = ((yaw % 360) + 360) % 360;
@@ -265,7 +299,10 @@
             const view = (Math.round(normalizedView * 100) % 36000) / 100;
             cameraDebug.textContent = 'Yaw: ' + yaw.toFixed(2) + '°\n' +
                 'Pitch: ' + viewer.getPitch().toFixed(2) + '°\n' +
-                'View: ' + view.toFixed(2) + '°';
+                'View: ' + view.toFixed(2) + '°\n' +
+                'Mouse Yaw: ' + (mousePosition ? mousePosition.yaw.toFixed(2) : '--') + '°\n' +
+                'Mouse Pitch: ' + (mousePosition ? mousePosition.pitch.toFixed(2) : '--') + '°' +
+                (performance.now() < placementExpires ? '\n\n' + placementMessage : '');
             requestAnimationFrame(updateCameraDebug);
         }
         updateCameraDebug();
