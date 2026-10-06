@@ -9,6 +9,38 @@
     <style>
         html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; }
         #viewer { width: 100%; height: 100%; }
+        .room-light-switch {
+            position: absolute;
+            right: 20px;
+            top: 20px;
+            z-index: 1000;
+            width: 92px;
+            min-height: 80px;
+            padding: 10px;
+            border: 1px solid #9b9180;
+            border-radius: 6px;
+            background: linear-gradient(135deg, #e0d9ca, #a89f90);
+            color: #292720;
+            box-shadow: inset 1px 1px 2px #fff8, 0 3px 8px #0008;
+            font: 12px/1.4 Arial, sans-serif;
+            cursor: pointer;
+            touch-action: manipulation;
+        }
+        .room-light-rocker {
+            display: block;
+            width: 24px;
+            height: 30px;
+            margin: 0 auto 6px;
+            border: 1px solid #807665;
+            border-radius: 3px;
+            background: linear-gradient(#f4ead3, #b7aa90);
+            box-shadow: inset 0 2px 3px #fff9, 0 2px 2px #0005;
+        }
+        .room-light-switch.is-on .room-light-rocker { box-shadow: 0 0 12px #ffd486, inset 0 2px 3px #fff9; }
+        .room-light-switch.is-off { background: linear-gradient(135deg, #827e75, #55524b); color: #eee6d6; }
+        .room-light-switch.is-off .room-light-rocker { background: linear-gradient(#696459, #a59a84); }
+        .room-light-switch:active .room-light-rocker { transform: scale(0.94); }
+        .room-light-switch:focus-visible { outline: 2px solid #ffe0a0; outline-offset: 4px; }
         /* Custom exterior hotspot. Pannellum positions the outer element. */
         .enter-hotel-hotspot {
             width: 0;
@@ -307,6 +339,44 @@
             // Clicks bubble to Pannellum's existing scene navigation handler.
         }
 
+        // Exterior schedule uses the visitor's local device time.
+        const exteriorSchedule = {
+            dayStartHour: 7,
+            nightStartHour: 19,
+            dayPanorama: 'Panoramas/hotel_exterior_day.png',
+            nightPanorama: 'Panoramas/hotel_exterior_night.png'
+        };
+        function getExteriorPanorama(date = new Date()) {
+            const hour = date.getHours();
+            return hour >= exteriorSchedule.dayStartHour && hour < exteriorSchedule.nightStartHour
+                ? exteriorSchedule.dayPanorama : exteriorSchedule.nightPanorama;
+        }
+
+        // Room lighting assets. Hall entry always starts with lights on.
+        // A future lighting switch should preserve viewer yaw, pitch, and hfov.
+        const room101Lighting = {
+            on: 'Panoramas/room101-lights-on.png',
+            off: 'Panoramas/room101-lights-off.png'
+        };
+
+        function createRoomLightSwitch() {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'room-light-switch';
+            button.hidden = true;
+            const rocker = document.createElement('span');
+            rocker.className = 'room-light-rocker';
+            rocker.setAttribute('aria-hidden', 'true');
+            const label = document.createElement('span');
+            label.className = 'room-light-label';
+            button.append(rocker, label);
+            return button;
+        }
+
+        function toggleRoomLights(event, destination) {
+            viewer.loadScene(destination, viewer.getPitch(), viewer.getYaw(), viewer.getHfov());
+        }
+
         // All navigation is configured here. Camera and hotspot positions are temporary.
         const viewer = pannellum.viewer('viewer', {
             default: {
@@ -316,7 +386,7 @@
             scenes: {
                 hotel_exterior: {
                     type: 'equirectangular',
-                    panorama: 'Panoramas/hotel_exterior.png',
+                    panorama: getExteriorPanorama(),
                     hotSpots: [
                         {
                             pitch: 0,
@@ -380,11 +450,52 @@
                 },
                 room101: {
                     type: 'equirectangular',
-                    panorama: 'Panoramas/room101.png',
+                    panorama: room101Lighting.on,
+                    hotSpots: [
+                        { pitch: 0, yaw: 180, type: 'scene', text: 'Back to Hall', sceneId: 'hall', cssClass: 'enter-hotel-hotspot', createTooltipFunc: createEnterHotelButton, createTooltipArgs: 'Back to Hall' }
+                    ]
+                },
+                room101_lights_off: {
+                    type: 'equirectangular',
+                    panorama: room101Lighting.off,
                     hotSpots: [
                         { pitch: 0, yaw: 180, type: 'scene', text: 'Back to Hall', sceneId: 'hall', cssClass: 'enter-hotel-hotspot', createTooltipFunc: createEnterHotelButton, createTooltipArgs: 'Back to Hall' }
                     ]
                 }
+            }
+        });
+
+        // Fixed room UI lives inside the viewer so it also works in fullscreen.
+        const roomLightSwitch = createRoomLightSwitch();
+        document.getElementById('viewer').appendChild(roomLightSwitch);
+        function updateRoomLightSwitch(sceneId) {
+            const isOn = sceneId === 'room101';
+            roomLightSwitch.hidden = !isOn && sceneId !== 'room101_lights_off';
+            roomLightSwitch.classList.toggle('is-on', isOn);
+            roomLightSwitch.classList.toggle('is-off', !isOn);
+            roomLightSwitch.querySelector('.room-light-label').textContent = isOn ? 'Lights ON' : 'Lights OFF';
+            roomLightSwitch.setAttribute('aria-label', isOn ? 'Lights ON: turn lights off' : 'Lights OFF: turn lights on');
+        }
+        roomLightSwitch.addEventListener('click', function (event) {
+            event.stopPropagation();
+            const sceneId = viewer.getScene();
+            if (!viewer.isLoaded() || (sceneId !== 'room101' && sceneId !== 'room101_lights_off')) return;
+            toggleRoomLights(event, sceneId === 'room101' ? 'room101_lights_off' : 'room101');
+        });
+        ['pointerdown', 'pointermove', 'pointerup', 'mousedown', 'mousemove', 'mouseup', 'touchstart', 'touchmove', 'touchend', 'dblclick', 'wheel'].forEach(type => {
+            roomLightSwitch.addEventListener(type, event => event.stopPropagation());
+        });
+        viewer.on('scenechange', updateRoomLightSwitch);
+        updateRoomLightSwitch(viewer.getScene());
+
+        // Pannellum emits scenechange before loading the new panorama.
+        // Update only the active exterior image, keeping its hotspot configuration.
+        viewer.on('scenechange', function (sceneId) {
+            if (sceneId === 'hotel_exterior') {
+                viewer.getConfig().panorama = getExteriorPanorama();
+            }
+            if (sceneId === 'room101') {
+                viewer.getConfig().panorama = room101Lighting.on;
             }
         });
 
