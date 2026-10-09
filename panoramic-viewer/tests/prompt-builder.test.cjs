@@ -60,11 +60,13 @@ const gl = new Proxy({
 for (const [,id] of html.matchAll(/\bid="([^"]+)"/g)) {
  elements[id] = {
   hidden: ['view','loading','promptPanel','file'].includes(id), value:'', textContent:'',
-  clientWidth:1200, clientHeight:800, handlers:{}, attributes:{}, disabled:false,
+  clientWidth:1200, clientHeight:800, handlers:{}, attributes:{}, disabled:false, isConnected:true, open:false,
   classList:{add(){},remove(){}},
   addEventListener(type,callback){this.handlers[type]=callback},
   setAttribute(name,value){this.attributes[name]=value},
-  focus(){}, select(){this.selected=true}, click(){this.clicked=true},
+  focus(){context.document.activeElement=this}, select(){this.selected=true}, click(){this.clicked=true},
+  showModal(){this.open=true;elements.closeGuide.focus()},close(){this.open=false},
+  getBoundingClientRect(){return {left:10,top:10,right:600,bottom:700}},
   setPointerCapture(){}, getContext:()=>gl
  };
 }
@@ -81,9 +83,11 @@ class Image {
   queueMicrotask(()=>value.includes('invalid')?this.onerror():this.onload());
  }
 }
+const storage=new Map();
+const localStorage={getItem:key=>storage.get(key)||null,setItem:(key,value)=>storage.set(key,value)};
 const context = {
  document:{getElementById:id=>elements[id],body:{appendChild(){}},createElement:tag=>tag==='canvas'?new PixelCanvas():{click(){downloads.push(this.download)},remove(){}}},
- window:{devicePixelRatio:1,addEventListener:(type,callback)=>events[type]=callback},
+ window:{devicePixelRatio:1,localStorage,addEventListener:(type,callback)=>events[type]=callback},
  navigator:{clipboard:{writeText:async text=>{copied=text}}},
  URL:{createObjectURL:file=>(made++,'blob:'+file.name),revokeObjectURL:()=>freed++},
  Image, console, Blob, setTimeout:callback=>callback()
@@ -94,6 +98,19 @@ const run = source => vm.runInContext(source,context);
 const load = name => run(`openImage(${JSON.stringify({name})})`);
 const near = (a,b) => assert.ok(Math.abs(a-b)<1e-8, `${a} != ${b}`);
 async function main(){
+ assert.equal(elements.usageGuide.open,true); // First visit opens automatically.
+ elements.guideDone.handlers.click();assert.equal(elements.usageGuide.open,false);
+ assert.equal(storage.get('orbit.usageGuideSeen.v1'),'1');
+ assert.equal(context.document.activeElement,elements.choose);
+ run('guideSeen=false;showFirstVisitHelp()');assert.equal(elements.usageGuide.open,false);
+ elements.loaderHelp.handlers.click();assert.equal(elements.usageGuide.open,true);
+ elements.usageGuide.handlers.cancel({preventDefault(){}});assert.equal(elements.usageGuide.open,false);
+ assert.equal(context.document.activeElement,elements.loaderHelp);
+ // Blocked storage should not break help or the app.
+ context.window.localStorage={getItem(){throw Error('blocked')},setItem(){throw Error('blocked')}};
+ run('guideSeen=false;showFirstVisitHelp()');assert.equal(elements.usageGuide.open,true);
+ elements.closeGuide.handlers.click();assert.equal(elements.usageGuide.open,false);
+ context.window.localStorage=localStorage;
  // Check all cardinal directions and a diagonal against independent expectations.
  for(const [bearing,right,forward] of [[0,0,5],[-90,-5,0],[90,5,0],[180,0,-5],[-180,0,-5],[45,Math.sqrt(12.5),Math.sqrt(12.5)]]){
   const delta=run(`movement(${bearing},5)`);near(delta.right,right);near(delta.forward,forward);
@@ -101,6 +118,17 @@ async function main(){
  assert.equal(run('normalizeBearing(450)'),90);
  assert.equal(run('normalizeBearing(-450)'),-90);
  await load('current.png');assert.equal(elements.view.hidden,false);
+ const loadedPanorama=run('currentPanorama');run('yaw=.4;pitch=.1;draw()');
+ elements.viewerHelp.handlers.click();assert.equal(elements.usageGuide.open,true);
+ events.keydown({key:'ArrowRight',target:elements.canvas,preventDefault(){}});assert.equal(run('yaw'),.4);
+ events.drop({preventDefault(){},dataTransfer:{files:[{name:'other.png'}]}});assert.equal(run('currentPanorama'),loadedPanorama);
+ events.keydown({key:'Escape',preventDefault(){}});
+ assert.equal(elements.usageGuide.open,false);assert.equal(elements.view.hidden,false);
+ assert.equal(run('currentPanorama'),loadedPanorama);assert.equal(run('pitch'),.1);
+ assert.equal(context.document.activeElement,elements.viewerHelp);
+ elements.viewerHelp.handlers.click();
+ elements.usageGuide.handlers.click({target:elements.usageGuide,clientX:0,clientY:0});assert.equal(elements.usageGuide.open,false);
+ run('home()');
  elements.next.handlers.click();assert.equal(elements.promptPanel.hidden,false);
  assert.equal(elements.next.attributes['aria-expanded'],'true');
  assert.match(elements.prompt.value,/walks 5 meters straight forward/);
@@ -192,6 +220,10 @@ async function main(){
  await run("importRepair({name:'repair-small.png'})");
  assert.equal(run('currentPanorama'),original);assert.equal(elements.repairCandidate.hidden,false);
  assert.equal(elements.applyRepair.disabled,false);
+ const candidate=run('pendingRepair');elements.viewerHelp.handlers.click();
+ events.keydown({key:'Escape',preventDefault(){}});
+ assert.equal(run('pendingRepair'),candidate);assert.equal(run('currentPanorama'),original);
+ assert.equal(elements.repairCandidate.hidden,false);
  assert.match(elements.repairDifference.textContent,/Pixel changes do not prove/);
  assert.equal(elements.beforeRepair.width,36);assert.equal(elements.afterRepair.width,36);
  elements.discardRepair.handlers.click();assert.equal(run('currentPanorama'),original);
@@ -218,6 +250,6 @@ async function main(){
  await load('invalid.png');assert.match(elements.message.textContent,/Could not read/);
  const pending=load('cancelled.png');events.keydown({key:'Escape',preventDefault(){}});await pending;
  assert.equal(elements.view.hidden,true);assert.equal(made,freed);
- console.log('PASS: direction/autofill, roll reversal, gapped reference/alpha mask, repair prompt, dimension rejection, candidate preview/discard/apply, change detection, band preservation/feathering, orientation, save and cancellation.');
+ console.log('PASS: first-visit guide/storage fallback, help controls/focus/Escape/state preservation, direction/autofill, repair reference/mask, candidate validation/application, band compositing, save and cancellation.');
 }
 main().catch(error=>{console.error(error);process.exitCode=1});

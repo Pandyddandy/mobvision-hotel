@@ -4,6 +4,12 @@ A self-contained, offline 360° viewer and prompt builder. Open `index.html` in 
 
 No installation, server, external dependencies, or uploads are required. The browser needs WebGL. Press **Escape** to return to the image picker.
 
+## In-app usage guide
+
+The guide opens automatically on the first visit. Dismissing it records a small preference in browser storage; if storage is blocked, the guide can appear again on the next visit. The **?** buttons on the loader and viewer reopen it anytime.
+
+The guide covers image requirements, navigation, generation prompts, and seam repair. Opening it preserves the loaded panorama, viewing direction, form settings, and pending repair candidate. **Escape** closes the guide first; press it again from the viewer to return to the image picker.
+
 ## Generate the next viewpoint
 
 1. Open **Next frame**. Direction follows the viewer's horizontal rotation: 0° front, −90° left, +90° right, and ±180° back. Manual entry remains available until you rotate again.
@@ -31,6 +37,6 @@ With Node.js installed, run from this folder:
 node tests/prompt-builder.test.cjs
 ```
 
-The tests cover directions, automatic heading updates, prompts, image rolling, repair references and masks, candidate validation and application, preservation outside the band, feathering, orientation, and cancellation. They use a simulated DOM and pixel-backed canvas; they do not verify real browser/WebGL rendering or GPT generation quality.
+The tests cover the first-visit guide, storage fallback, help controls, focus restoration, Escape behavior, preserved viewer state, directions, automatic heading updates, prompts, image rolling, repair references and masks, candidate validation and application, preservation outside the band, feathering, orientation, and cancellation. They use a simulated DOM and pixel-backed canvas; they do not verify real browser/WebGL rendering or GPT generation quality.
 
 The source panorama skill is preserved in `skills/panorama-from-image/`.
