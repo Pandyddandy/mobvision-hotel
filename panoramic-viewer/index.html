@@ -14,11 +14,13 @@
 .next{padding:12px 17px;font-size:14px}.heading{font-variant-numeric:tabular-nums}.panel{position:absolute;right:24px;top:88px;bottom:100px;width:min(440px,calc(100% - 48px));padding:22px;overflow:auto;background:#0b141cf5;box-shadow:0 20px 80px #0008;z-index:2}.panel-head{display:flex;align-items:center;justify-content:space-between;gap:12px}.panel h2{font-size:23px;letter-spacing:-.5px;margin:0}.close{background:none;border:0;color:#b4c5cc;font-size:24px;padding:0 7px}.panel p{font-size:13px;line-height:1.6;color:#a8bbc3}.fields{display:grid;grid-template-columns:1fr 1fr;gap:12px}.field{display:flex;flex-direction:column;gap:7px;font-size:12px;color:#bbd0d5;margin:16px 0 0}input,textarea{font:inherit;color:#e8f2f3;border:1px solid #36504d;border-radius:9px;background:#101f23;padding:11px;width:100%}input:focus-visible,textarea:focus-visible{outline:2px solid #91e8d0;outline-offset:2px}textarea{resize:vertical;line-height:1.55}.presets{display:flex;gap:7px;flex-wrap:wrap;margin-top:12px}.small{background:#203633;border:1px solid #39534e;border-radius:8px;color:#d6ebe4;font-size:12px;padding:9px 10px}.small:hover{background:#304b44}.bearing-help{font-size:11px!important}.panel .summary{color:#adebd5;font-size:13px}.prompt{font-family:ui-monospace,monospace;font-size:12px;min-height:230px}.actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:14px}.actions .primary{font-size:13px;padding:11px 18px}.panel .feedback{color:#f5c897;margin-bottom:0;min-height:20px}.panel .fine{font-size:11px;color:#829ca4}.top-actions{display:flex;gap:8px;align-items:center;justify-content:flex-end;min-width:0}.top-actions .filename{max-width:220px}
 .repair{margin-top:24px;padding-top:20px;border-top:1px solid #ffffff20}.repair summary{cursor:pointer;color:#adebd5;font-size:16px;font-weight:600}.repair ol{padding-left:20px;color:#a8bbc3;font-size:12px;line-height:1.7}.repair .prompt{min-height:180px}button:disabled{cursor:default;opacity:.45}.repair-status{overflow-wrap:anywhere}
 .comparison{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}.comparison figure{margin:0;min-width:0}.comparison figcaption{font-size:12px;color:#b7cfc8;margin-bottom:8px}.comparison canvas{height:230px;width:100%;object-fit:contain;background:#080f12;border:1px solid #345047;border-radius:8px;cursor:default;touch-action:auto}
+.help-button{width:44px;height:44px;flex-shrink:0;font-weight:700;font-size:20px}.loader-help{position:absolute;top:24px;right:24px}.help-dialog{width:min(720px,calc(100% - 32px));max-height:90svh;overflow:auto;padding:28px;border:1px solid #45665f;border-radius:20px;background:#101d22;color:#edf3f7;box-shadow:0 24px 100px #0009}.help-dialog::backdrop{background:#030a12b8;backdrop-filter:blur(6px)}.help-header{display:flex;justify-content:space-between;align-items:center;gap:20px}.help-header h2{font-size:28px;letter-spacing:-1px;margin:0}.help-dialog h3{color:#adebd5;font-size:17px;margin:24px 0 10px}.help-dialog p,.help-dialog li{font-size:14px;line-height:1.75;color:#b8cbd0}.help-dialog ol{padding-left:22px}.help-dialog li+li{margin-top:6px}.help-dialog strong{color:#e6f4ef}.help-dialog kbd{font:inherit;font-size:12px;border:1px solid #45665f;border-radius:5px;padding:2px 6px;background:#ffffff08}.help-footer{display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap;margin-top:24px;border-top:1px solid #ffffff18;padding-top:20px}.help-footer p{font-size:12px;margin:0}.help-dialog .close{min-width:44px;min-height:44px}
 @media(max-width:600px){.top{top:16px;left:16px;right:16px;gap:8px}.top-actions .filename{display:none}.hint{font-size:11px}.bottom{bottom:18px}.notice{left:16px}.drop{padding:28px 16px}.back{padding:12px;font-size:12px}.back span{display:none}.panel{top:72px;right:12px;bottom:12px;width:calc(100% - 24px);padding:18px}.next{font-size:12px;padding:12px}.bottom .hint{max-width:100%;text-align:center}}
 </style>
 </head>
 <body>
 <main id="loader" class="loader">
+ <button id="loaderHelp" class="glass help-button loader-help" aria-label="Open usage guide" aria-haspopup="dialog" title="Usage guide">?</button>
  <div class="card">
   <div class="brand"><span class="mark" aria-hidden="true">◎</span> ORBIT</div>
   <h1>A whole world.<br>One image.</h1>
@@ -36,7 +38,7 @@
 </main>
 <section id="view" class="view" aria-label="360 degree panorama viewer" hidden>
  <canvas id="canvas" tabindex="0" aria-label="Panorama. Drag to look around, use arrow keys to turn, plus or minus to zoom, and Escape to return."></canvas>
- <div class="top"><button id="back" class="glass back">← Choose another <span style="opacity:.5;margin-left:8px">Esc</span></button><div class="top-actions"><div id="filename" class="glass filename"></div><button id="next" class="glass next" aria-expanded="false" aria-controls="promptPanel">Next frame ↗</button></div></div>
+ <div class="top"><button id="back" class="glass back">← Choose another <span style="opacity:.5;margin-left:8px">Esc</span></button><div class="top-actions"><div id="filename" class="glass filename"></div><button id="next" class="glass next" aria-expanded="false" aria-controls="promptPanel">Next frame ↗</button><button id="viewerHelp" class="glass help-button" aria-label="Open usage guide" aria-haspopup="dialog" title="Usage guide">?</button></div></div>
  <div id="notice" class="notice" role="status"></div>
  <div class="bottom"><div class="glass hint">Drag to explore · Scroll or pinch to zoom · Looking <span id="heading" class="heading">0°</span></div><div class="glass controls"><button id="out" class="control" aria-label="Zoom out">−</button><button id="reset" class="control" aria-label="Reset view" title="Reset view">↺</button><button id="in" class="control" aria-label="Zoom in">+</button></div></div>
  <aside id="promptPanel" class="glass panel" aria-labelledby="panelTitle" hidden>
@@ -72,6 +74,20 @@
  </aside>
  <div id="loading" class="loading" hidden>Opening your world…</div>
 </section>
+<dialog id="usageGuide" class="help-dialog" aria-labelledby="guideTitle">
+ <div class="help-header"><h2 id="guideTitle">Your guide to Orbit</h2><button id="closeGuide" class="close" aria-label="Close usage guide" autofocus>×</button></div>
+ <p>Explore a panorama, build the prompt for your next viewpoint, and repair its wrap seam when needed. This guide opens on your first visit; use <strong>?</strong> to open it again anytime.</p>
+ <h3>1. Open and explore</h3>
+ <p>Choose or drop a full <strong>360° × 180° equirectangular image</strong>, with a <strong>2:1 width-to-height ratio</strong>. JPEG, PNG, and WebP are good choices. A regular wide photo will not contain every direction.</p>
+ <p>Drag to look around. Scroll or pinch to zoom. With the panorama focused, use the arrow keys to turn, <kbd>+</kbd> / <kbd>−</kbd> to zoom, and <kbd>Home</kbd> to reset. The ↺ button also resets the view. <kbd>Esc</kbd> closes this guide first; from the viewer it returns to the image picker.</p>
+ <h3>2. Generate the next viewpoint</h3>
+ <ol><li>Open <strong>Next frame</strong>. The direction follows your rotation: <strong>0° front, −90° left, +90° right, ±180° back</strong>. You can enter it manually; turning again resumes autofill.</li><li>Set the distance in meters (starts at <strong>5 m</strong>) and add optional scene notes.</li><li>Copy the prompt into GPT and attach the <strong>current full panorama</strong> as Image 1. The viewer builds the prompt; generate the image in GPT.</li><li>Use <strong>Load generated frame</strong> to explore the result, then repeat with that new panorama as your reference.</li></ol>
+ <p>Each frame keeps the same original front direction. Distance, parallax, and hidden geometry are estimates from a single image; inspect the result for scene drift.</p>
+ <h3>3. Repair the wrap seam</h3>
+ <ol><li>Load the panorama with the broken join, then open <strong>Next frame → Repair the wrap seam</strong>.</li><li>Choose a repair band (starts at <strong>20%</strong>; try a wider band for large misaligned structures). Download a <strong>fresh repair reference</strong>. The viewer moves the join to the center and covers it with a magenta strip.</li><li>Attach that downloaded reference to GPT and copy its matching repair prompt. Ask GPT to <strong>replace the magenta strip with continuous scene content</strong>. The optional edit mask is for tools with a dedicated mask input.</li><li>Import GPT’s result with <strong>Preview GPT repair</strong>. Keep the exact reference dimensions and framing. Compare the before/after join: changed pixels alone do not prove the repair worked.</li><li><strong>Apply candidate</strong> only if the geometry connects. The viewer blends just the band, preserves the surrounding image, and restores the original front. Save the fixed panorama and use it for your next GPT reference.</li></ol>
+ <p>Keep this page open during seam repair; its reference and settings stay in memory. If GPT leaves the break or placeholder intact, regenerate from the fresh reference or try a wider band.</p>
+ <div class="help-footer"><p>Your images stay on this device.<br>Opening help keeps your current image and work in place.</p><button id="guideDone" class="primary">Got it</button></div>
+</dialog>
 <script>
 'use strict';
 const $ = id => document.getElementById(id);
@@ -81,6 +97,24 @@ let lastHeading = null;
 let currentPanorama = null, currentName = '', repairSession = null, repairVersion = 0, repairedAvailable = false, pendingRepair = null;
 const pointers = new Map();
 const clamp = (v,a,b) => Math.max(a,Math.min(b,v));
+const guideSeenKey='orbit.usageGuideSeen.v1';
+let guideSeen=false,guideReturnFocus=null;
+function showHelp(trigger){
+ const guide=$('usageGuide');if(guide.open)return;
+ guideReturnFocus=trigger||document.activeElement;pointers.clear();guide.showModal();
+}
+function closeHelp(){
+ const guide=$('usageGuide');if(!guide.open)return;
+ guide.close();guideSeen=true;
+ try{window.localStorage.setItem(guideSeenKey,'1');}catch{/* Help still works when browser storage is unavailable. */}
+ if(guideReturnFocus?.isConnected&&!guideReturnFocus.disabled)guideReturnFocus.focus();
+ else (active?canvas:$('choose')).focus();
+}
+function showFirstVisitHelp(){
+ if(guideSeen)return;
+ try{if(window.localStorage.getItem(guideSeenKey)==='1')return;}catch{/* Show the guide on this visit when storage is blocked. */}
+ showHelp($('choose'));
+}
 // Adapted from skills/panorama-from-image/references/prompt-pattern.md.
 // The source is already a full panorama. Translate the camera and preserve
 // the source longitude convention; don't treat it as a perspective crop.
@@ -402,12 +436,21 @@ $('downloadMask').addEventListener('click',downloadRepairMask);
 $('applyRepair').addEventListener('click',applyRepair);
 $('discardRepair').addEventListener('click',()=>{repairVersion++;clearRepairCandidate();$('repairFeedback').textContent='Candidate discarded. The current panorama is unchanged.';});
 $('seamPercent').addEventListener('input',updateRepairStatus);
+$('loaderHelp').addEventListener('click',()=>showHelp($('loaderHelp')));
+$('viewerHelp').addEventListener('click',()=>showHelp($('viewerHelp')));
+$('closeGuide').addEventListener('click',closeHelp);$('guideDone').addEventListener('click',closeHelp);
+$('usageGuide').addEventListener('cancel',e=>{e.preventDefault();closeHelp();});
+$('usageGuide').addEventListener('click',e=>{
+ if(e.target!==$('usageGuide'))return;
+ const rect=$('usageGuide').getBoundingClientRect();
+ if(e.clientX<rect.left||e.clientX>rect.right||e.clientY<rect.top||e.clientY>rect.bottom)closeHelp();
+});
 for(const id of ['bearing','meters','sceneNotes'])$(id).addEventListener('input',updatePrompt);
 for(const [id,bearing] of [['leftBearing',-90],['frontBearing',0],['rightBearing',90],['backBearing',180]])$(id).addEventListener('click',()=>{$('bearing').value=String(bearing);updatePrompt();});
 $('useHeading').addEventListener('click',()=>{$('bearing').value=numberText(normalizeBearing(yaw*180/Math.PI));updatePrompt();});
 let dragDepth=0;
 window.addEventListener('dragover',e=>e.preventDefault());
-window.addEventListener('drop',e=>{e.preventDefault();dragDepth=0;$('drop').classList.remove('over');if(e.dataTransfer.files.length)openImage(e.dataTransfer.files[0]);});
+window.addEventListener('drop',e=>{e.preventDefault();dragDepth=0;$('drop').classList.remove('over');if($('usageGuide').open)return;if(e.dataTransfer.files.length)openImage(e.dataTransfer.files[0]);});
 $('drop').addEventListener('dragenter',()=>{dragDepth++;$('drop').classList.add('over');});
 $('drop').addEventListener('dragleave',()=>{if(--dragDepth<=0){dragDepth=0;$('drop').classList.remove('over');}});
 canvas.addEventListener('pointerdown',e=>{if(e.pointerType==='mouse'&&e.button!==0)return;canvas.setPointerCapture(e.pointerId);pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});canvas.focus();});
@@ -421,6 +464,7 @@ canvas.addEventListener('pointermove',e=>{
 for(const type of ['pointerup','pointercancel','lostpointercapture'])canvas.addEventListener(type,e=>pointers.delete(e.pointerId));
 canvas.addEventListener('wheel',e=>{e.preventDefault();zoom(clamp(e.deltaY,-100,100)*.04);},{passive:false});
 window.addEventListener('keydown',e=>{
+ if($('usageGuide').open){if(e.key==='Escape'){e.preventDefault();closeHelp();}return;}
  if(e.key==='Escape'){if(active||$('message').textContent==='Opening image…'){e.preventDefault();leave();}return;}
  if(!active||e.target!==canvas)return;
  const step=.06;
@@ -429,6 +473,7 @@ window.addEventListener('keydown',e=>{
 });
 window.addEventListener('resize',draw);
 canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();leave('The graphics connection was interrupted. Reload this page to try again.');$('choose').disabled=true;});
+showFirstVisitHelp();
 </script>
 </body>
 </html>
