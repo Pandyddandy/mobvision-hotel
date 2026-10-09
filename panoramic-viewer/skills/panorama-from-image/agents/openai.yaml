@@ -1,0 +1,3 @@
+interface:
+  display_name: "Panorama From Image"
+  short_description: "Turn normal images into seamless 360° equirectangular panoramas"

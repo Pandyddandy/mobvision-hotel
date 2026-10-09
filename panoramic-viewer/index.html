@@ -1,0 +1,434 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Orbit — 360° image viewer</title>
+<style>
+:root{color-scheme:dark;font-family:Inter,ui-sans-serif,system-ui,sans-serif;background:#0b1016;color:#edf3f7}
+*{box-sizing:border-box}body{margin:0}button{font:inherit;cursor:pointer}button:focus-visible,a:focus-visible{outline:3px solid #91e8d0;outline-offset:5px}[hidden]{display:none!important}
+.loader{min-height:100svh;display:grid;place-items:center;padding:32px;background:radial-gradient(ellipse at 50% 15%,#18332f 0,transparent 60%),#0b1016}
+.card{width:min(100%,640px);text-align:center}.brand{display:flex;align-items:center;justify-content:center;gap:10px;font-size:13px;letter-spacing:4px;font-weight:700;color:#a4ddcf}.mark{font-size:30px;letter-spacing:0}h1{font-size:clamp(36px,7vw,58px);letter-spacing:-2px;line-height:1.08;margin:30px 0 18px;font-weight:600}.intro{color:#aebbc5;font-size:17px;line-height:1.65;margin:0 auto 32px;max-width:470px}
+.drop{border:1px dashed #45665f;border-radius:22px;padding:36px 24px;background:#14201f80;transition:background .2s,border-color .2s}.drop.over{background:#25473e;border-color:#9be9d2}.icon{color:#a0e6d0;margin-bottom:18px}.primary{background:#adebd5;color:#10251e;border:0;border-radius:12px;padding:14px 26px;font-weight:650}.primary:hover{background:#c8f5e4}.drop p{color:#8fa69f;font-size:14px;margin:16px 0 0}.spec{display:flex;justify-content:center;flex-wrap:wrap;gap:9px;margin:24px 0}.spec span{padding:7px 11px;background:#ffffff06;border:1px solid #ffffff0e;border-radius:8px;font-size:12px;color:#a5b4bf}.privacy{font-size:12px;color:#73818c}.message{color:#f5c897;line-height:1.5;min-height:24px;font-size:14px;margin:18px 0 0}
+.view{position:fixed;inset:0;background:#080c11}canvas{width:100%;height:100%;display:block;touch-action:none;cursor:grab}canvas:active{cursor:grabbing}.top{position:absolute;left:24px;right:24px;top:24px;display:flex;align-items:center;justify-content:space-between;gap:16px;pointer-events:none}.glass{background:#0b141ccc;border:1px solid #ffffff20;backdrop-filter:blur(16px);border-radius:12px;color:#edf3f7;pointer-events:auto}.back{padding:12px 17px}.back:hover,.control:hover{background:#253a42}.filename{padding:12px 16px;font-size:13px;max-width:50%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.bottom{position:absolute;bottom:26px;left:20px;right:20px;display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;pointer-events:none}.hint{font-size:12px;color:#d1dce1;padding:12px 16px;pointer-events:none}.controls{display:flex;overflow:hidden}.control{background:transparent;border:0;color:inherit;padding:11px 15px;min-width:44px;font-size:18px}.control+button{border-left:1px solid #ffffff18}.notice{position:absolute;top:82px;left:24px;right:24px;color:#f1d2a9;font-size:12px;pointer-events:none;text-shadow:0 1px 5px black}.loading{position:absolute;inset:0;display:grid;place-items:center;background:#0b1016cc;font-size:16px;pointer-events:none}
+.next{padding:12px 17px;font-size:14px}.heading{font-variant-numeric:tabular-nums}.panel{position:absolute;right:24px;top:88px;bottom:100px;width:min(440px,calc(100% - 48px));padding:22px;overflow:auto;background:#0b141cf5;box-shadow:0 20px 80px #0008;z-index:2}.panel-head{display:flex;align-items:center;justify-content:space-between;gap:12px}.panel h2{font-size:23px;letter-spacing:-.5px;margin:0}.close{background:none;border:0;color:#b4c5cc;font-size:24px;padding:0 7px}.panel p{font-size:13px;line-height:1.6;color:#a8bbc3}.fields{display:grid;grid-template-columns:1fr 1fr;gap:12px}.field{display:flex;flex-direction:column;gap:7px;font-size:12px;color:#bbd0d5;margin:16px 0 0}input,textarea{font:inherit;color:#e8f2f3;border:1px solid #36504d;border-radius:9px;background:#101f23;padding:11px;width:100%}input:focus-visible,textarea:focus-visible{outline:2px solid #91e8d0;outline-offset:2px}textarea{resize:vertical;line-height:1.55}.presets{display:flex;gap:7px;flex-wrap:wrap;margin-top:12px}.small{background:#203633;border:1px solid #39534e;border-radius:8px;color:#d6ebe4;font-size:12px;padding:9px 10px}.small:hover{background:#304b44}.bearing-help{font-size:11px!important}.panel .summary{color:#adebd5;font-size:13px}.prompt{font-family:ui-monospace,monospace;font-size:12px;min-height:230px}.actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:14px}.actions .primary{font-size:13px;padding:11px 18px}.panel .feedback{color:#f5c897;margin-bottom:0;min-height:20px}.panel .fine{font-size:11px;color:#829ca4}.top-actions{display:flex;gap:8px;align-items:center;justify-content:flex-end;min-width:0}.top-actions .filename{max-width:220px}
+.repair{margin-top:24px;padding-top:20px;border-top:1px solid #ffffff20}.repair summary{cursor:pointer;color:#adebd5;font-size:16px;font-weight:600}.repair ol{padding-left:20px;color:#a8bbc3;font-size:12px;line-height:1.7}.repair .prompt{min-height:180px}button:disabled{cursor:default;opacity:.45}.repair-status{overflow-wrap:anywhere}
+.comparison{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}.comparison figure{margin:0;min-width:0}.comparison figcaption{font-size:12px;color:#b7cfc8;margin-bottom:8px}.comparison canvas{height:230px;width:100%;object-fit:contain;background:#080f12;border:1px solid #345047;border-radius:8px;cursor:default;touch-action:auto}
+@media(max-width:600px){.top{top:16px;left:16px;right:16px;gap:8px}.top-actions .filename{display:none}.hint{font-size:11px}.bottom{bottom:18px}.notice{left:16px}.drop{padding:28px 16px}.back{padding:12px;font-size:12px}.back span{display:none}.panel{top:72px;right:12px;bottom:12px;width:calc(100% - 24px);padding:18px}.next{font-size:12px;padding:12px}.bottom .hint{max-width:100%;text-align:center}}
+</style>
+</head>
+<body>
+<main id="loader" class="loader">
+ <div class="card">
+  <div class="brand"><span class="mark" aria-hidden="true">◎</span> ORBIT</div>
+  <h1>A whole world.<br>One image.</h1>
+  <p class="intro">Step inside your panorama. Open a 360° image and look around in every direction.</p>
+  <div id="drop" class="drop">
+   <div class="icon" aria-hidden="true"><svg width="48" height="48" viewBox="0 0 48 48" fill="none"><rect x="5" y="8" width="38" height="32" rx="7" stroke="currentColor" stroke-width="1.5"/><circle cx="16" cy="19" r="3" stroke="currentColor" stroke-width="1.5"/><path d="m6 34 11-9 8 6 8-12 10 15" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg></div>
+   <button id="choose" class="primary">Choose panorama</button>
+   <input id="file" type="file" accept="image/*" hidden>
+   <p>or drop an image here</p>
+  </div>
+  <div class="spec"><span>Equirectangular panorama</span><span>2:1 image ratio</span><span>360° × 180°</span></div>
+  <p class="privacy">Your image stays on this device. No uploads, no accounts.</p>
+  <p id="message" class="message" role="status" aria-live="polite"></p>
+ </div>
+</main>
+<section id="view" class="view" aria-label="360 degree panorama viewer" hidden>
+ <canvas id="canvas" tabindex="0" aria-label="Panorama. Drag to look around, use arrow keys to turn, plus or minus to zoom, and Escape to return."></canvas>
+ <div class="top"><button id="back" class="glass back">← Choose another <span style="opacity:.5;margin-left:8px">Esc</span></button><div class="top-actions"><div id="filename" class="glass filename"></div><button id="next" class="glass next" aria-expanded="false" aria-controls="promptPanel">Next frame ↗</button></div></div>
+ <div id="notice" class="notice" role="status"></div>
+ <div class="bottom"><div class="glass hint">Drag to explore · Scroll or pinch to zoom · Looking <span id="heading" class="heading">0°</span></div><div class="glass controls"><button id="out" class="control" aria-label="Zoom out">−</button><button id="reset" class="control" aria-label="Reset view" title="Reset view">↺</button><button id="in" class="control" aria-label="Zoom in">+</button></div></div>
+ <aside id="promptPanel" class="glass panel" aria-labelledby="panelTitle" hidden>
+  <div class="panel-head"><h2 id="panelTitle">Take the next step</h2><button id="closePanel" class="close" aria-label="Close prompt builder">×</button></div>
+  <p>Choose where to walk. Copy the prompt into GPT and attach the <strong>current full panorama</strong> as Image 1.</p>
+  <div class="fields"><label class="field" for="bearing">Direction (degrees)<input id="bearing" type="number" min="-180" max="180" step="any" value="0"></label><label class="field" for="meters">Distance (meters)<input id="meters" type="number" min="0.1" max="1000" step="any" value="5"></label></div>
+  <p class="bearing-help">0° front · −90° left · +90° right · ±180° back.<br>Direction fills automatically as you rotate. You can also enter a direction manually; rotating again updates it.</p>
+  <div class="presets"><button id="leftBearing" class="small">−90° Left</button><button id="frontBearing" class="small">0° Front</button><button id="rightBearing" class="small">+90° Right</button><button id="backBearing" class="small">180° Back</button><button id="useHeading" class="small">Use looking direction</button></div>
+  <p id="moveSummary" class="summary" aria-live="polite"></p>
+  <label class="field" for="sceneNotes">Scene notes (optional)<textarea id="sceneNotes" rows="2" placeholder="e.g. Walk along the terrace; keep the city skyline and night lighting."></textarea></label>
+  <label class="field" for="prompt">Prompt for GPT<textarea id="prompt" class="prompt" rows="12" readonly spellcheck="false"></textarea></label>
+  <div class="actions"><button id="copyPrompt" class="primary">Copy prompt</button><button id="loadNext" class="small">Load generated frame</button></div>
+  <p id="promptFeedback" class="feedback" role="status" aria-live="polite"></p>
+  <p class="fine">Each new frame keeps the same front direction. Load it here and repeat. Distance and hidden geometry are approximate from one image; check the result for scene drift and seams.</p>
+  <details id="repairDetails" class="repair">
+   <summary>Repair the wrap seam</summary>
+   <ol><li>Load the generated panorama with the broken seam.</li><li>Download a repair reference. The viewer centers the join and covers it with a magenta strip to rebuild.</li><li>Attach that downloaded image to GPT with the repair prompt below.</li><li>Import GPT’s candidate, compare the join, and apply it only when the geometry connects.</li></ol>
+   <label class="field" for="seamPercent">Repair band (% of image width)<input id="seamPercent" type="number" min="4" max="40" step="1" value="20"></label>
+   <div class="actions"><button id="prepareRepair" class="small">1. Download repair reference</button></div>
+   <p id="repairStatus" class="fine repair-status" role="status"></p>
+   <label class="field" for="repairPrompt">Seam-repair prompt for GPT<textarea id="repairPrompt" class="prompt" rows="9" readonly spellcheck="false" placeholder="Download a repair reference to prepare its matching prompt."></textarea></label>
+   <div class="actions"><button id="copyRepair" class="primary" disabled>2. Copy repair prompt</button><button id="importRepair" class="small" disabled>3. Preview GPT repair</button><button id="downloadMask" class="small" disabled>Download edit mask</button><button id="saveRepaired" class="small" disabled>Save fixed panorama</button></div>
+   <p class="fine">The edit mask is optional for tools with a dedicated mask input; attach the magenta reference for ordinary GPT image generation.</p>
+   <div id="repairCandidate" hidden>
+    <div class="comparison"><figure><figcaption>Original join</figcaption><canvas id="beforeRepair" aria-label="Original seam neighborhood"></canvas></figure><figure><figcaption>Candidate after blending</figcaption><canvas id="afterRepair" aria-label="Candidate seam neighborhood"></canvas></figure></div>
+    <p id="repairDifference" class="fine"></p>
+    <div class="actions"><button id="applyRepair" class="primary" disabled>Apply candidate</button><button id="discardRepair" class="small">Discard candidate</button></div>
+   </div>
+   <input id="repairFile" type="file" accept="image/*" hidden>
+   <p id="repairFeedback" class="feedback" role="status" aria-live="polite"></p>
+   <p class="fine">Keep this page open through the repair. GPT must return the exact reference dimensions and framing. Repair quality still needs a visual check; use the fixed panorama for your next movement.</p>
+  </details>
+ </aside>
+ <div id="loading" class="loading" hidden>Opening your world…</div>
+</section>
+<script>
+'use strict';
+const $ = id => document.getElementById(id);
+const canvas = $('canvas');
+let gl, program, texture, locations, yaw = 0, pitch = 0, fov = 80, generation = 0, active = false, ready = false;
+let lastHeading = null;
+let currentPanorama = null, currentName = '', repairSession = null, repairVersion = 0, repairedAvailable = false, pendingRepair = null;
+const pointers = new Map();
+const clamp = (v,a,b) => Math.max(a,Math.min(b,v));
+// Adapted from skills/panorama-from-image/references/prompt-pattern.md.
+// The source is already a full panorama. Translate the camera and preserve
+// the source longitude convention; don't treat it as a perspective crop.
+const normalizeBearing = degrees => ((degrees+180)%360+360)%360-180;
+const numberText = value => Number(value.toFixed(3)).toString();
+function movement(bearing,meters){
+ const radians=bearing*Math.PI/180;
+ return {right:meters*Math.sin(radians),forward:meters*Math.cos(radians)};
+}
+function buildPrompt(bearing,meters,notes=''){
+ const delta=movement(bearing,meters);
+ const direction=Math.abs(bearing)===180?'straight backward':bearing===0?'straight forward':bearing===90?'directly right':bearing===-90?'directly left':`${Math.abs(bearing)} degrees to the ${bearing<0?'left':'right'} of the source front`;
+ return `IMAGE 1 — CURRENT PANORAMA / SCENE REFERENCE
+Use the attached current full equirectangular panorama as the reference for the SAME environment. Generate the next panorama from a new camera position after the observer walks ${numberText(meters)} meters ${direction}, at signed bearing ${numberText(bearing)}°.
+
+DIRECTION AND CAMERA POSITION
+Interpret Image 1 as a 360° × 180° spherical panorama, not a normal perspective photo. Its horizontal center (u=0.5) is 0° front, u=0.25 is −90° left, u=0.75 is +90° right, and the left/right wrap seam is ±180° back. Positive bearings turn right; negative bearings turn left.
+Use a local coordinate system with +X to the source camera's right, +Z toward its 0° front, and +Y up. Translate the camera by ΔX=${numberText(delta.right)} m, ΔZ=${numberText(delta.forward)} m, and ΔY=0 m. Move along the horizontal ground plane at the same plausible eye height. Infer metric scale from familiar objects; the requested distance is an estimate because this image contains no measured depth.
+Keep the output's 0° front aligned with the source's 0° front in world space. Walking direction changes position ONLY; do not rotate the output to face the walking direction. Keep yaw orientation consistent, camera level, pitch=0, and roll=0. For example, walking right is a sideways camera translation, not a rightward pan.
+
+RECONSTRUCT THE SCENE AT THE NEW POSITION
+Inspect the entire source sphere: architecture, floor or terrain, objects, relative layout, scale, materials, camera height, horizon, light direction, atmosphere, weather, time of day, visual style, and color grade. Preserve this environment and all recognizable landmarks in consistent world positions; only the observer moves. Update object bearings, apparent sizes, perspective, occlusions, and parallax according to the camera translation. Nearby objects shift more than distant ones; very distant skylines and celestial features retain approximately the same bearings. Objects passed by the observer should move naturally toward the sides or rear. Reveal previously occluded surfaces and infer hidden geometry conservatively from the same scene. Preserve people and clothing if present, with no accidental duplicates, and keep the same instant in time.
+Do not simulate this move by zooming, cropping, stretching, shifting panorama pixels, rotating the panorama, or pasting the old view unchanged. Do not redesign the environment or move landmarks to keep their original pixel positions. Respect walls, railings, furniture, cliffs, and other obstacles. If the requested destination or path is clearly inaccessible, explain the obstruction and ask for a reachable direction or shorter distance instead of inventing a passage or teleporting.
+
+SPHERICAL OUTPUT AND SEAM QUALITY
+For a feasible move, output one full spherical 360° × 180° equirectangular flat texture with an exact 2:1 aspect ratio. Use a single stationary, level camera at the new position, with the horizon at the vertical midpoint. Include complete zenith directly overhead and nadir directly beneath, with correct equirectangular stretching at both poles. Keep all directions spatially coherent.
+The left and right edges represent adjacent longitudes and must wrap seamlessly. Continue floor, wall, ceiling, railing, terrain, sky, cloud, texture, exposure, lighting, and shadow details across the seam. Preserve the fixed source front orientation even if a landmark crosses the seam; continue it correctly rather than moving or duplicating it. No missing poles, blank ground, black patches, borders, labels, text, interface, cubemap layout, fisheye circle, tiny-planet projection, cylindrical panorama, or ordinary ultrawide perspective.
+Treat horizontal longitude as periodic: content continues from the final column into the first column. Check this wrap as one continuous neighborhood, including geometry and lighting; do not finish the two edges independently. Keep the full output in its original front orientation. Any separate seam-repair pass will be performed afterward.
+${notes.trim()?`\nADDITIONAL SCENE GUIDANCE\n${notes.trim()}\n`:''}
+For a feasible move, return only the new panorama image.`;
+}
+function updatePrompt(){
+ const bearing=Number($('bearing').value),meters=Number($('meters').value);
+ const valid=$('bearing').value.trim()!==''&&$('meters').value.trim()!==''&&Number.isFinite(bearing)&&Number.isFinite(meters)&&bearing>=-180&&bearing<=180&&meters>=.1&&meters<=1000;
+ $('copyPrompt').disabled=!valid;$('promptFeedback').textContent='';
+ if(!valid){$('prompt').value='';$('moveSummary').textContent='Enter a direction from −180° to 180° and a distance from 0.1 to 1,000 meters.';return;}
+ $('moveSummary').textContent=`Move ${numberText(meters)} m at ${bearing>0?'+':''}${numberText(bearing)}° · keep the original front orientation.`;
+ $('prompt').value=buildPrompt(bearing,meters,$('sceneNotes').value);
+}
+function showPanel(show){
+ $('promptPanel').hidden=!show;$('next').setAttribute('aria-expanded',String(show));
+ if(show){$('bearing').value=numberText(normalizeBearing(yaw*180/Math.PI));updatePrompt();$('bearing').focus();}else if(active){$('next').focus();}
+}
+async function copyText(field,feedback,success){
+ const text=$(field).value;if(!text)return;
+ try{
+  if(!navigator.clipboard?.writeText)throw new Error('Clipboard unavailable');
+  await navigator.clipboard.writeText(text);
+  $(feedback).textContent=success;
+ }catch{
+  $(field).focus();$(field).select();
+  $(feedback).textContent='Prompt selected. Press Ctrl+C (or Command+C) to copy.';
+ }
+}
+function copyPrompt(){return copyText('prompt','promptFeedback','Copied. Attach the current panorama as Image 1 in GPT.');}
+const imageSize = image => ({width:image.naturalWidth||image.width,height:image.naturalHeight||image.height});
+function makeCanvas(width,height){
+ const result=document.createElement('canvas');result.width=width;result.height=height;
+ if(!result.getContext('2d'))throw new Error('This browser could not create the repair image.');
+ return result;
+}
+function rollPanorama(image,offset){
+ const {width,height}=imageSize(image),shift=((offset%width)+width)%width;
+ const result=makeCanvas(width,height),ctx=result.getContext('2d');
+ if(shift===0){ctx.drawImage(image,0,0);return result;}
+ ctx.drawImage(image,0,0,width-shift,height,shift,0,width-shift,height);
+ ctx.drawImage(image,width-shift,0,shift,height,0,0,shift,height);
+ return result;
+}
+function repairBand(width,percent){
+ const half=Math.min(width/2,Math.max(2,Math.round(width*percent/200)));
+ return {start:width/2-half,width:half*2,feather:Math.max(1,Math.round(half*.3))};
+}
+function repairCore(band){return {start:band.start+band.feather,width:band.width-band.feather*2};}
+function makeRepairReference(shifted,band){
+ const result=rollPanorama(shifted,0),ctx=result.getContext('2d'),core=repairCore(band);
+ ctx.fillStyle='#ff00ff';ctx.fillRect(core.start,0,core.width,result.height);
+ return result;
+}
+function makeRepairMask(shifted,band){
+ const {width,height}=imageSize(shifted),result=makeCanvas(width,height),ctx=result.getContext('2d'),core=repairCore(band);
+ ctx.fillStyle='#ffffff';ctx.fillRect(0,0,width,height);ctx.clearRect(core.start,0,core.width,height);
+ return result;
+}
+// Blend only the band. Premultiplied alpha interpolation also handles PNG transparency.
+function blendBandPixels(original,repaired,width,height,feather){
+ for(let x=0;x<width;x++){
+  const alpha=clamp(Math.min(x,width-1-x)/feather,0,1);
+  if(alpha===0)continue;
+  for(let y=0;y<height;y++){
+   const index=(y*width+x)*4,oa=original[index+3]/255,ra=repaired[index+3]/255;
+   const mixedAlpha=oa*(1-alpha)+ra*alpha;
+   for(let channel=0;channel<3;channel++)original[index+channel]=mixedAlpha ? (original[index+channel]*oa*(1-alpha)+repaired[index+channel]*ra*alpha)/mixedAlpha : 0;
+   original[index+3]=mixedAlpha*255;
+  }
+ }
+ return original;
+}
+function compositeRepair(session,repaired){
+ const {width,height}=imageSize(session.shifted),size=imageSize(repaired);
+ if(size.width!==width||size.height!==height)throw new Error(`Repair must be exactly ${width} × ${height} pixels. GPT returned ${size.width} × ${size.height}. Regenerate at the original size without cropping or reframing.`);
+ const result=rollPanorama(session.shifted,0),ctx=result.getContext('2d'),band=session.band;
+ const repairCanvas=makeCanvas(width,height);repairCanvas.getContext('2d').drawImage(repaired,0,0);
+ const original=ctx.getImageData(band.start,0,band.width,height);
+ const edit=repairCanvas.getContext('2d').getImageData(band.start,0,band.width,height);
+ blendBandPixels(original.data,edit.data,band.width,height,band.feather);
+ ctx.putImageData(original,band.start,0);
+ return rollPanorama(result,-session.shift);
+}
+function buildRepairPrompt(width,height,band){
+ const core=repairCore(band);
+ return `IMAGE 1 — INCOMPLETE SHIFTED PANORAMA TO RECONSTRUCT
+Generate an EDIT of the attached image. REPLACE THE ENTIRE SOLID MAGENTA STRIP with newly reconstructed scene content. Magenta is an editing placeholder covering a broken panoramic join; it is NOT an object, wall, light, or material in the scene. An unchanged image or a remaining magenta strip is a failed result.
+
+The attached ${width} × ${height} image is a full 360° × 180° equirectangular panorama horizontally rolled by exactly half its width. The original broken left/right wrap join is now the vertical line at x=${width/2}, in the CENTER of this image. It has been covered so you can rebuild a SINGLE CONTINUOUS environment connecting the visible scene on both sides. The current outer edges come from an already continuous region of the original panorama.
+
+The magenta region is the full-height strip from x=${core.start} to x=${core.start+core.width}; horizontal pixel coordinates start at zero. You may reconstruct within the larger repair band from x=${band.start} to x=${band.start+band.width}. Continue surfaces and structures THROUGH the missing region: floor tiles, wall and railing lines, ceiling, skyline, cloud shapes, and shadows must connect naturally to BOTH visible boundaries. Infer one plausible geometric transition, matching perspective, material, color, exposure, and lighting. Rebuild misaligned or truncated objects as needed within the band instead of faithfully retaining the discontinuity. Avoid duplicated landmarks. Do not disguise the join with blur, fog, an inserted pillar, a wall, or another obstruction. Preserve the surrounding scene and match the outermost ${band.feather} pixels inside each band boundary for feathered compositing.
+
+This is a local seam repair at the CURRENT camera position. Do not walk, move the camera, pan, rotate, roll, zoom, crop, reframe, change the scene layout, or change the time of day. Preserve everything outside the repair band. Do not undo the half-width horizontal roll; the viewer will do that afterward. Do not add seam markers or a visible divider.
+
+Return the FULL image, exactly ${width} × ${height} pixels, with the same framing and 2:1 equirectangular projection. Keep the horizon at its original height and preserve complete zenith and nadir with the correct polar distortion. Keep the existing outer-edge continuity. Output only the repaired shifted panorama, with no text, labels, borders, or interface.`;
+}
+function clearRepairCandidate(){pendingRepair=null;$('repairCandidate').hidden=true;$('applyRepair').disabled=true;$('repairDifference').textContent='';}
+function resetRepair(){
+ repairVersion++;repairSession=null;repairedAvailable=false;
+ clearRepairCandidate();$('downloadMask').disabled=true;
+ $('repairPrompt').value='';$('repairFeedback').textContent='';$('repairFile').value='';
+ $('copyRepair').disabled=true;$('importRepair').disabled=true;$('saveRepaired').disabled=true;
+ updateRepairStatus();
+}
+function updateRepairStatus(){
+ const percent=Number($('seamPercent').value),size=currentPanorama&&imageSize(currentPanorama);
+ const valid=size&&size.width===size.height*2&&size.width>=32&&percent>=4&&percent<=40&&Number.isInteger(percent);
+ $('prepareRepair').disabled=!valid;
+ $('repairStatus').textContent=repairSession ? `${repairSession.referenceName} · attach this magenta-gap reference to the repair prompt. Band settings are saved with this reference.` : !size ? 'Load a panorama first.' : size.width!==size.height*2||size.width<32 ? 'Seam repair requires a full 2:1 panorama at least 32 pixels wide.' : !valid ? 'Choose a whole-number band width from 4% to 40%.' : `${size.width} × ${size.height} · the original front direction will be restored after repair.`;
+}
+function canvasBlob(image){return new Promise((resolve,reject)=>image.toBlob(blob=>blob?resolve(blob):reject(new Error('Could not encode this image. Try a smaller panorama.')),'image/png'));}
+function downloadBlob(blob,name){
+ const url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download=name;
+ document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+function filenameStem(name){return name.replace(/\.[^.]+$/,'')||'panorama';}
+async function prepareRepair(){
+ if(!currentPanorama||$('prepareRepair').disabled)return;
+ const source=currentPanorama,version=++repairVersion;
+ clearRepairCandidate();
+ $('repairFeedback').textContent='Preparing the shifted reference…';
+ try{
+  const {width,height}=imageSize(source),shift=width/2,band=repairBand(width,Number($('seamPercent').value));
+  const shifted=rollPanorama(source,shift),referenceName=`${filenameStem(currentName)}-seam-reference.png`;
+  const blob=await canvasBlob(makeRepairReference(shifted,band));
+  if(version!==repairVersion||source!==currentPanorama)return;
+  repairSession={shifted,shift,band,referenceName,name:currentName};
+  $('repairPrompt').value=buildRepairPrompt(width,height,band);$('copyRepair').disabled=false;$('importRepair').disabled=false;$('downloadMask').disabled=false;
+  downloadBlob(blob,referenceName);updateRepairStatus();
+  $('repairFeedback').textContent='Gap reference downloaded. Ask GPT to replace the magenta strip using the repair prompt below.';
+ }catch(error){if(version===repairVersion)$('repairFeedback').textContent=error.message;}
+}
+async function importRepair(file){
+ if(!file||!repairSession)return;
+ const session=repairSession,version=++repairVersion,url=URL.createObjectURL(file),img=new Image();
+ clearRepairCandidate();$('repairFeedback').textContent='Preparing a repair preview…';
+ try{
+  await new Promise((resolve,reject)=>{img.onload=resolve;img.onerror=()=>reject(new Error('Could not read that repair image. Choose a PNG, JPEG, or WebP.'));img.src=url;});
+  if(version!==repairVersion||session!==repairSession)return;
+  const fixed=compositeRepair(session,img);
+  const stats=repairStats(session,img);
+  if(stats.unchanged)throw new Error('The repair band is unchanged. GPT did not rebuild it. Regenerate using the magenta-gap reference and the new prompt.');
+  if(stats.placeholderFraction>.25)throw new Error('A large magenta placeholder remains in the repair. Ask GPT to replace the whole strip with scene content.');
+  previewRepair(session,fixed);
+  pendingRepair={session,version,fixed};$('repairCandidate').hidden=false;$('applyRepair').disabled=false;
+  $('repairDifference').textContent=`${numberText(stats.changedFraction*100)}% of pixels in the band changed. Pixel changes do not prove the seam is fixed: inspect geometry, object continuity, and both band boundaries.`;
+  $('repairFeedback').textContent='Candidate preview ready. The current panorama is unchanged until you click Apply candidate.';
+ }catch(error){if(version===repairVersion)$('repairFeedback').textContent=error.message;}
+ finally{URL.revokeObjectURL(url);$('repairFile').value='';}
+}
+function repairStats(session,repaired){
+ const {width,height}=imageSize(repaired),canvas=makeCanvas(width,height),ctx=canvas.getContext('2d'),band=session.band;
+ ctx.drawImage(repaired,0,0);
+ const a=session.shifted.getContext('2d').getImageData(band.start,0,band.width,height).data;
+ const b=ctx.getImageData(band.start,0,band.width,height).data;
+ let changed=0,placeholders=0;
+ for(let i=0;i<a.length;i+=4){
+  if(Math.max(Math.abs(a[i]-b[i]),Math.abs(a[i+1]-b[i+1]),Math.abs(a[i+2]-b[i+2]),Math.abs(a[i+3]-b[i+3]))>8)changed++;
+  if(b[i]>240&&b[i+1]<15&&b[i+2]>240)placeholders++;
+ }
+ return {unchanged:a.every((value,i)=>value===b[i]),changedFraction:changed/(a.length/4),placeholderFraction:placeholders/(a.length/4)};
+}
+function previewRepair(session,fixed){
+ const {width,height}=imageSize(session.shifted),region=Math.min(width,Math.max(session.band.width*3,Math.round(width*.3))),start=Math.floor((width-region)/2);
+ const shiftedFixed=rollPanorama(fixed,session.shift);
+ for(const [id,image] of [['beforeRepair',session.shifted],['afterRepair',shiftedFixed]]){
+  const preview=$(id);preview.width=region;preview.height=height;
+  preview.getContext('2d').drawImage(image,start,0,region,height,0,0,region,height);
+ }
+}
+function applyRepair(){
+ if(!pendingRepair||pendingRepair.version!==repairVersion||pendingRepair.session!==repairSession)return;
+ try{
+  const {fixed,session}=pendingRepair;
+  displayPanorama(fixed,`${filenameStem(session.name)}-seam-fixed.png`,false);
+  repairSession=null;clearRepairCandidate();$('repairPrompt').value='';$('copyRepair').disabled=true;$('importRepair').disabled=true;$('downloadMask').disabled=true;
+  repairedAvailable=true;$('saveRepaired').disabled=false;updateRepairStatus();updatePrompt();
+  $('repairFeedback').textContent='Candidate applied; original front restored. Inspect the wrap in 360°, then save it for your next GPT reference.';
+ }catch(error){$('repairFeedback').textContent=error.message;}
+}
+async function downloadRepairMask(){
+ const session=repairSession,version=repairVersion;if(!session)return;
+ try{
+  const blob=await canvasBlob(makeRepairMask(session.shifted,session.band));
+  if(version===repairVersion&&session===repairSession)downloadBlob(blob,`${filenameStem(session.name)}-seam-mask.png`);
+ }catch(error){if(version===repairVersion)$('repairFeedback').textContent=error.message;}
+}
+async function saveRepaired(){
+ if(!currentPanorama||!repairedAvailable)return;
+ const source=currentPanorama,name=currentName,version=repairVersion;
+ try{
+  const blob=await canvasBlob(rollPanorama(source,0));
+  if(source===currentPanorama&&version===repairVersion)downloadBlob(blob,name);
+ }catch(error){if(version===repairVersion)$('repairFeedback').textContent=error.message;}
+}
+function initialize() {
+ if (gl) return;
+ gl = canvas.getContext('webgl', {alpha:false,antialias:false});
+ if (!gl) throw new Error('This browser could not start WebGL. Try another browser or enable hardware acceleration.');
+ const vertex = 'attribute vec2 position; varying vec2 screen; void main(){screen=position;gl_Position=vec4(position,0.0,1.0);}';
+ const fragment = `precision ${gl.getShaderPrecisionFormat(gl.FRAGMENT_SHADER,gl.HIGH_FLOAT).precision ? 'highp' : 'mediump'} float;
+ varying vec2 screen; uniform sampler2D panorama; uniform float aspect; uniform float scale; uniform float yaw; uniform float pitch;
+ void main(){
+  vec3 ray=normalize(vec3(screen.x*aspect*scale,screen.y*scale,-1.0));
+  float cp=cos(pitch),sp=sin(pitch),cy=cos(yaw),sy=sin(yaw);
+  ray=vec3(ray.x,ray.y*cp-ray.z*sp,ray.y*sp+ray.z*cp);
+  ray=vec3(ray.x*cy-ray.z*sy,ray.y,ray.x*sy+ray.z*cy);
+  vec2 uv=vec2(fract(atan(ray.x,-ray.z)/6.28318530718+0.5),0.5-asin(clamp(ray.y,-1.0,1.0))/3.14159265359);
+  gl_FragColor=texture2D(panorama,uv);
+ }`;
+ function compile(type,source){const s=gl.createShader(type);gl.shaderSource(s,source);gl.compileShader(s);if(!gl.getShaderParameter(s,gl.COMPILE_STATUS)){const log=gl.getShaderInfoLog(s);gl.deleteShader(s);throw new Error(log);}return s;}
+ const vs=compile(gl.VERTEX_SHADER,vertex),fs=compile(gl.FRAGMENT_SHADER,fragment);
+ program=gl.createProgram();gl.attachShader(program,vs);gl.attachShader(program,fs);gl.linkProgram(program);gl.deleteShader(vs);gl.deleteShader(fs);
+ if(!gl.getProgramParameter(program,gl.LINK_STATUS)) throw new Error('Could not initialize the panorama renderer.');
+ gl.useProgram(program);
+ const buffer=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,buffer);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,-1,1,1,-1,1,1]),gl.STATIC_DRAW);
+ const position=gl.getAttribLocation(program,'position');gl.enableVertexAttribArray(position);gl.vertexAttribPointer(position,2,gl.FLOAT,false,0,0);
+ locations=Object.fromEntries(['aspect','scale','yaw','pitch','panorama'].map(name=>[name,gl.getUniformLocation(program,name)]));
+ gl.uniform1i(locations.panorama,0);
+}
+function draw(){
+ const heading=numberText(normalizeBearing(yaw*180/Math.PI));
+ $('heading').textContent=`${heading}°`;
+ if(heading!==lastHeading){
+  lastHeading=heading;$('bearing').value=heading;
+  if(!$('promptPanel').hidden)updatePrompt();
+ }
+ if(!active || !ready || !gl || gl.isContextLost()) return;
+ const ratio=Math.min(window.devicePixelRatio||1,2),w=Math.round(canvas.clientWidth*ratio),h=Math.round(canvas.clientHeight*ratio);
+ if(!w||!h)return;
+ if(canvas.width!==w||canvas.height!==h){canvas.width=w;canvas.height=h;}
+ gl.viewport(0,0,w,h);gl.uniform1f(locations.aspect,w/h);gl.uniform1f(locations.scale,Math.tan(fov*Math.PI/360));gl.uniform1f(locations.yaw,yaw);gl.uniform1f(locations.pitch,pitch);gl.drawArrays(gl.TRIANGLES,0,6);
+}
+function home(){yaw=0;pitch=0;fov=80;draw();}
+function zoom(amount){fov=clamp(fov+amount,30,110);draw();}
+function leave(message=''){
+ generation++;active=false;ready=false;pointers.clear();
+ currentPanorama=null;currentName='';resetRepair();
+ if(texture&&gl&&!gl.isContextLost()){gl.deleteTexture(texture);texture=null;}
+ $('promptPanel').hidden=true;$('next').setAttribute('aria-expanded','false');
+ $('view').hidden=true;$('loader').hidden=false;$('loading').hidden=true;$('file').value='';$('message').textContent=message;$('choose').focus();
+}
+function displayPanorama(image,name,resetView=true){
+ initialize();
+ const {width,height}=imageSize(image),notes=[];
+ if(Math.abs(width/height-2)>.02)notes.push('This image is not 2:1. A full equirectangular panorama will give the best result.');
+ const limit=gl.getParameter(gl.MAX_TEXTURE_SIZE);
+ let source=image;
+ if(width>limit||height>limit){
+  const factor=Math.min(limit/width,limit/height),small=makeCanvas(Math.max(1,Math.floor(width*factor)),Math.max(1,Math.floor(height*factor)));
+  small.getContext('2d').drawImage(image,0,0,small.width,small.height);source=small;notes.push('Viewer preview scaled to fit this device. Repair exports keep the full image dimensions.');
+ }
+ const nextTexture=gl.createTexture();
+ try{
+  gl.bindTexture(gl.TEXTURE_2D,nextTexture);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
+  gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,source);
+  if(gl.getError()!==gl.NO_ERROR)throw new Error('This device could not load the image texture. Try a smaller image.');
+ }catch(error){gl.deleteTexture(nextTexture);gl.bindTexture(gl.TEXTURE_2D,texture);throw error;}
+ if(texture)gl.deleteTexture(texture);texture=nextTexture;
+ currentPanorama=image;currentName=name;
+ $('filename').textContent=name;$('notice').textContent=notes.join(' ');
+ $('loader').hidden=true;$('view').hidden=false;active=true;ready=true;
+ if(resetView)home();else draw();
+}
+async function openImage(file){
+ if(!file)return;
+ const id=++generation;
+ $('message').textContent='Opening image…';
+ const url=URL.createObjectURL(file),img=new Image();
+ try{
+  await new Promise((resolve,reject)=>{img.onload=resolve;img.onerror=()=>reject(new Error('Could not read that image. Choose a supported image such as JPEG, PNG, or WebP.'));img.src=url;});
+  if(id!==generation)return;
+  displayPanorama(img,file.name);resetRepair();$('loading').hidden=true;
+  $('bearing').value='0';$('sceneNotes').value='';showPanel(false);canvas.focus();
+ }catch(error){if(id===generation)leave(error.message||'Could not open this panorama.');}
+ finally{URL.revokeObjectURL(url);if(id===generation)$('file').value='';}
+}
+$('choose').addEventListener('click',()=>$('file').click());
+$('file').addEventListener('change',e=>openImage(e.target.files[0]));
+$('back').addEventListener('click',()=>leave());$('in').addEventListener('click',()=>zoom(-10));$('out').addEventListener('click',()=>zoom(10));$('reset').addEventListener('click',home);
+$('next').addEventListener('click',()=>showPanel($('promptPanel').hidden));
+$('closePanel').addEventListener('click',()=>showPanel(false));
+$('loadNext').addEventListener('click',()=>$('file').click());
+$('copyPrompt').addEventListener('click',copyPrompt);
+$('prepareRepair').addEventListener('click',prepareRepair);
+$('copyRepair').addEventListener('click',()=>copyText('repairPrompt','repairFeedback','Copied. Attach the downloaded magenta-gap seam reference to GPT.'));
+$('importRepair').addEventListener('click',()=>$('repairFile').click());
+$('repairFile').addEventListener('change',e=>importRepair(e.target.files[0]));
+$('saveRepaired').addEventListener('click',saveRepaired);
+$('downloadMask').addEventListener('click',downloadRepairMask);
+$('applyRepair').addEventListener('click',applyRepair);
+$('discardRepair').addEventListener('click',()=>{repairVersion++;clearRepairCandidate();$('repairFeedback').textContent='Candidate discarded. The current panorama is unchanged.';});
+$('seamPercent').addEventListener('input',updateRepairStatus);
+for(const id of ['bearing','meters','sceneNotes'])$(id).addEventListener('input',updatePrompt);
+for(const [id,bearing] of [['leftBearing',-90],['frontBearing',0],['rightBearing',90],['backBearing',180]])$(id).addEventListener('click',()=>{$('bearing').value=String(bearing);updatePrompt();});
+$('useHeading').addEventListener('click',()=>{$('bearing').value=numberText(normalizeBearing(yaw*180/Math.PI));updatePrompt();});
+let dragDepth=0;
+window.addEventListener('dragover',e=>e.preventDefault());
+window.addEventListener('drop',e=>{e.preventDefault();dragDepth=0;$('drop').classList.remove('over');if(e.dataTransfer.files.length)openImage(e.dataTransfer.files[0]);});
+$('drop').addEventListener('dragenter',()=>{dragDepth++;$('drop').classList.add('over');});
+$('drop').addEventListener('dragleave',()=>{if(--dragDepth<=0){dragDepth=0;$('drop').classList.remove('over');}});
+canvas.addEventListener('pointerdown',e=>{if(e.pointerType==='mouse'&&e.button!==0)return;canvas.setPointerCapture(e.pointerId);pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});canvas.focus();});
+canvas.addEventListener('pointermove',e=>{
+ const previous=pointers.get(e.pointerId);if(!previous)return;
+ const next={x:e.clientX,y:e.clientY};
+ if(pointers.size===2){const other=[...pointers.entries()].find(([id])=>id!==e.pointerId)[1];const before=Math.hypot(previous.x-other.x,previous.y-other.y),after=Math.hypot(next.x-other.x,next.y-other.y);if(before>0&&after>0)fov=clamp(fov*before/after,30,110);}
+ else{const sensitivity=fov*Math.PI/180/canvas.clientHeight;yaw-=(next.x-previous.x)*sensitivity;pitch=clamp(pitch+(next.y-previous.y)*sensitivity,-Math.PI/2,Math.PI/2);}
+ pointers.set(e.pointerId,next);draw();
+});
+for(const type of ['pointerup','pointercancel','lostpointercapture'])canvas.addEventListener(type,e=>pointers.delete(e.pointerId));
+canvas.addEventListener('wheel',e=>{e.preventDefault();zoom(clamp(e.deltaY,-100,100)*.04);},{passive:false});
+window.addEventListener('keydown',e=>{
+ if(e.key==='Escape'){if(active||$('message').textContent==='Opening image…'){e.preventDefault();leave();}return;}
+ if(!active||e.target!==canvas)return;
+ const step=.06;
+ switch(e.key){case 'ArrowLeft':yaw-=step;break;case 'ArrowRight':yaw+=step;break;case 'ArrowUp':pitch=clamp(pitch+step,-Math.PI/2,Math.PI/2);break;case 'ArrowDown':pitch=clamp(pitch-step,-Math.PI/2,Math.PI/2);break;case '+':case '=':zoom(-5);break;case '-':zoom(5);break;case 'Home':home();break;default:return;}
+ e.preventDefault();draw();
+});
+window.addEventListener('resize',draw);
+canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();leave('The graphics connection was interrupted. Reload this page to try again.');$('choose').disabled=true;});
+</script>
+</body>
+</html>
